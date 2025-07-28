@@ -34,7 +34,7 @@ const scenarioButtons = [
   'Настройка проектной документации',
   'Создание объекта строительства',
   'Работа с редактором документов',
-  'Заполнение Исходных данных',
+  'Заполнение исходных данных',
   'Другое',
   'Начать новый чат',
 ];
@@ -70,6 +70,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
           time: now,
         },
       ]);
+      const lastMessage = messages[messages.length - 1]?.text;
+      if (lastMessage !== 'Что бы вы хотели узнать?') {
+        setShowScenarios(true);
+      }
     }
   }, [response]);
 
@@ -150,6 +154,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           },
         ]);
+        setShowScenarios(true);
       }, 1000);
       return;
     }
@@ -175,8 +180,22 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
     }
   };
   const handleScenarioClick = (text: string) => {
-    setMessage(text);
-    setShowScenarios(false);
+    if (text === 'Другое') {
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          text: 'Что бы вы хотели узнать?',
+          author: 'bot',
+          time: now,
+        },
+      ]);
+      setShowScenarios(false);
+    } else {
+      setMessage(text);
+      setShowScenarios(false);
+    }
   };
 
   return (
