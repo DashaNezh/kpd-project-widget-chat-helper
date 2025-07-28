@@ -41,19 +41,33 @@ const scenarioButtons = [
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
   const [dragActive, setDragActive] = useState(false);
-  const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      text: 'Добрый день! Чем могу помочь?',
-      author: 'bot',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    },
-  ]);
-  const [showScenarios, setShowScenarios] = useState(true);
+  const [message, setMessage] = useState(() => {
+    const savedMessage = localStorage.getItem('chatMessage');
+    return savedMessage ? savedMessage : '';
+  });
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const savedMessages = localStorage.getItem('chatMessages');
+    return savedMessages ? JSON.parse(savedMessages) : [
+      {
+        id: 1,
+        text: 'Добрый день! Чем могу помочь?',
+        author: 'bot',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ];
+  });
+  const [showScenarios, setShowScenarios] = useState(() => {
+    const savedShowScenarios = localStorage.getItem('chatShowScenarios');
+    return savedShowScenarios ? JSON.parse(savedShowScenarios) : true;
+  });
   const dragCounter = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [attachedFile, setAttachedFile] = useState<File | null>(() => {
+    const savedAttachedFile = localStorage.getItem('chatAttachedFile');
+    return savedAttachedFile ? JSON.parse(savedAttachedFile) : null;
+  });
+
+  // TODO: КОСТЫЛЬ
   const [email, setEmail] = useState('verbose@example.com');
 
   const { sendRequest, loading, error, response } = useChatDialog();
@@ -61,21 +75,33 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
   useEffect(() => {
     if (response && response.status === 'success') {
       const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          text: response.message,
-          author: 'bot',
-          time: now,
-        },
-      ]);
+      setMessages((prev: Message[]) => {
+        const newMessages: Message[] = [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            text: response.message,
+            author: 'bot',
+            time: now,
+          },
+        ];
+        localStorage.setItem('chatMessages', JSON.stringify(newMessages));
+        return newMessages;
+      });
       const lastMessage = messages[messages.length - 1]?.text;
       if (lastMessage !== 'Что бы вы хотели узнать?') {
         setShowScenarios(true);
+        localStorage.setItem('chatShowScenarios', JSON.stringify(true));
       }
     }
   }, [response]);
+
+  useEffect(() => {
+    localStorage.setItem('chatMessages', JSON.stringify(messages));
+    localStorage.setItem('chatShowScenarios', JSON.stringify(showScenarios));
+    localStorage.setItem('chatMessage', message);
+    localStorage.setItem('chatAttachedFile', JSON.stringify(attachedFile));
+  }, [messages, showScenarios, message, attachedFile]);
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -121,6 +147,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
   const handleMessageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
   };
+  
   const handleSend = async () => {
     if (!message.trim() && !attachedFile) return;
     const now = new Date();
@@ -133,28 +160,40 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
         read: false,
         fileName: attachedFile.name,
       };
-      setMessages((prev) => [...prev, newMsg]);
+      setMessages((prev) => {
+        const newMessages = [...prev, newMsg];
+        localStorage.setItem('chatMessages', JSON.stringify(newMessages));
+        return newMessages;
+      });
       setAttachedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       setShowScenarios(false);
+      localStorage.setItem('chatShowScenarios', JSON.stringify(false));
       setTimeout(() => {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === newMsg.id ? { ...msg, read: true } : msg
-          )
-        );
+        setMessages((prev) => {
+          const updatedMessages = prev.map((msg: Message) =>
+            msg.id === newMsg.id ? { ...msg, read: true } as Message : msg
+          );
+          localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
+          return updatedMessages;
+        });
       }, 1000);
       setTimeout(() => {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now() + 1,
-            text: 'Ожидайте ответа специалиста.',
-            author: 'bot',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          },
-        ]);
+        setMessages((prev) => {
+          const newMessages = [
+            ...prev,
+            {
+              id: Date.now() + 1,
+              text: 'Ожидайте ответа специалиста.',
+              author: 'bot',
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            } as Message,
+          ];
+          localStorage.setItem('chatMessages', JSON.stringify(newMessages));
+          return newMessages;
+        });
         setShowScenarios(true);
+        localStorage.setItem('chatShowScenarios', JSON.stringify(true));
       }, 1000);
       return;
     }
@@ -166,35 +205,65 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
         time: time,
         read: false,
       };
-      setMessages((prev) => [...prev, newMsg]);
+      setMessages((prev) => {
+        const newMessages = [...prev, newMsg];
+        localStorage.setItem('chatMessages', JSON.stringify(newMessages));
+        return newMessages;
+      });
       setMessage('');
+      localStorage.setItem('chatMessage', '');
       setShowScenarios(false);
+      localStorage.setItem('chatShowScenarios', JSON.stringify(false));
       setTimeout(() => {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === newMsg.id ? { ...msg, read: true } : msg
-          )
-        );
+        setMessages((prev) => {
+          const updatedMessages = prev.map((msg: Message) =>
+            msg.id === newMsg.id ? { ...msg, read: true } as Message : msg
+          );
+          localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
+          return updatedMessages;
+        });
       }, 1000);
       await sendRequest({ text: message, email });
     }
   };
+
   const handleScenarioClick = (text: string) => {
     if (text === 'Другое') {
       const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          text: 'Что бы вы хотели узнать?',
-          author: 'bot',
-          time: now,
-        },
-      ]);
+      setMessages((prev: Message[]) => {
+        const newMessages: Message[] = [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            text: 'Что бы вы хотели узнать?',
+            author: 'bot',
+            time: now,
+          },
+        ];
+        localStorage.setItem('chatMessages', JSON.stringify(newMessages));
+        return newMessages;
+      });
       setShowScenarios(false);
+      localStorage.setItem('chatShowScenarios', JSON.stringify(false));
+    } else if (text === 'Начать новый чат') {
+      const initialMessage: Message = {
+        id: Date.now(),
+        text: 'Добрый день! Чем могу помочь?',
+        author: 'bot',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages([initialMessage]);
+      setShowScenarios(true);
+      localStorage.removeItem('chatMessages');
+      localStorage.removeItem('chatShowScenarios');
+      localStorage.removeItem('chatMessage');
+      localStorage.removeItem('chatAttachedFile');
+      window.location.reload();
     } else {
       setMessage(text);
+      localStorage.setItem('chatMessage', text);
       setShowScenarios(false);
+      localStorage.setItem('chatShowScenarios', JSON.stringify(false));
     }
   };
 
