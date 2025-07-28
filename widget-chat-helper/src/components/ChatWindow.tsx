@@ -50,7 +50,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
     return savedMessages ? JSON.parse(savedMessages) : [
       {
         id: 1,
-        text: 'Добрый день! Чем могу помочь?',
+        text: 'Здравствуйте, я — KPD-бот, всегда готов помочь. Что бы вы хотели узнать?',
         author: 'bot',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
@@ -66,6 +66,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
     const savedAttachedFile = localStorage.getItem('chatAttachedFile');
     return savedAttachedFile ? JSON.parse(savedAttachedFile) : null;
   });
+
+  const [showDragZone, setShowDragZone] = useState(false);
 
   // TODO: КОСТЫЛЬ
   const [email, setEmail] = useState('verbose@example.com');
@@ -129,6 +131,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       setAttachedFile(files[0]);
+      setShowDragZone(false);
     }
   };
   const handleFileClick = () => {
@@ -138,6 +141,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       setAttachedFile(files[0]);
+      setShowDragZone(false);
     }
   };
   const handleRemoveFile = () => {
@@ -248,7 +252,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
     } else if (text === 'Начать новый чат') {
       const initialMessage: Message = {
         id: Date.now(),
-        text: 'Добрый день! Чем могу помочь?',
+        text: 'Здравствуйте, я — KPD-бот, всегда готов помочь. Что бы вы хотели узнать?',
         author: 'bot',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
@@ -266,6 +270,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
       localStorage.setItem('chatShowScenarios', JSON.stringify(false));
     }
   };
+  const isActive = (message || attachedFile) && !loading;
 
   return (
     <Paper
@@ -523,100 +528,151 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
       </Box>
       {/* Нижняя панель */}
       <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          borderTop: '1px solid #e0e0e0',
-          background: '#fff',
-          py: 1.5,
-          px: 2,
-        }}
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-      >
-        <input
-          type="file"
-          ref={fileInputRef}
-          style={{ display: 'none' }}
-          onChange={handleFileChange}
-          accept="*"
-        />
-        <IconButton sx={{ mr: 1 }} aria-label="Прикрепить файл" onClick={handleFileClick}>
-          <AttachFileIcon sx={{ color: '#888' }} />
-        </IconButton>
-        {attachedFile && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1, py: 0.5, mr: 1, minWidth: 0 }}>
-            <InsertDriveFileOutlinedIcon sx={{ color: '#2979ff', fontSize: 20 }} />
-            <Box sx={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography
-                component="span"
-                sx={{
-                  color: '#2979ff',
-                  fontSize: 15,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  maxWidth: 120,
-                }}
-                title={attachedFile.name}
-              >
-                {attachedFile.name}
-              </Typography>
-              <IconButton size="small" onClick={handleRemoveFile}>
-                <DeleteOutlineIcon sx={{ color: '#bdbdbd', fontSize: 18 }} />
-              </IconButton>
-            </Box>
-          </Box>
-        )}
-        <TextField
-          variant="standard"
-          placeholder={!attachedFile ? 'Сообщение...' : ''}
-          value={message}
-          onChange={handleMessageChange}
-          multiline
-          minRows={1}
-          maxRows={5}
-          InputProps={{
-            disableUnderline: true,
-            sx: {
-              fontSize: 16,
-              flex: 1,
-              background: 'transparent',
-              p: 0,
-              m: 0,
-              '& textarea': { textAlign: 'left', p: 0, m: 0 },
-              color: '#22242B',
-            },
-          }}
-          sx={{ flex: 1, mr: 1, p: 0, m: 0, minWidth: 0 }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey && (message || attachedFile)) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-          disabled={!!attachedFile || loading}
-        />
-        <IconButton
           sx={{
-            background: (message || attachedFile) && !loading ? '#2979ff' : undefined,
-            color: (message || attachedFile) && !loading ? '#fff' : undefined,
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            '&:hover': {
-              background: (message || attachedFile) && !loading ? '#1e4dcc' : undefined,
-            },
+            display: 'flex',
+            alignItems: 'center',
+            borderTop: '1px solid #e0e0e0',
+            background: '#fff',
+            py: 1.5,
+            px: 2,
           }}
-          aria-label="Отправить"
-          disabled={!message && !attachedFile || loading}
-          onClick={handleSend}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
         >
-          <NorthIcon sx={{ color: (message || attachedFile) && !loading ? '#fff' : undefined }} />
-        </IconButton>
-      </Box>
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+            accept="*"
+          />
+          <IconButton
+            sx={{ mr: 1 }}
+            aria-label="Прикрепить файл"
+            onClick={() => setShowDragZone(true)}
+          >
+            <img src="/assets/load_icon.svg" alt="load-icon" style={{ color: '#2979ff' }} />
+          </IconButton>
+          {attachedFile && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1, py: 0.5, mr: 1, minWidth: 0 }}>
+              <InsertDriveFileOutlinedIcon sx={{ color: '#2979ff', fontSize: 20 }} />
+              <Box sx={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 1, overflow: 'hidden' }}>
+                <Typography
+                  component="span"
+                  sx={{
+                    color: '#2979ff',
+                    fontSize: 15,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    flexGrow: 1,
+                    mr: 1,
+                  }}
+                  title={attachedFile.name}
+                >
+                  {attachedFile.name}
+                </Typography>
+                <IconButton size="small" onClick={handleRemoveFile}>
+                  <img src="/assets/delete_icon.svg" alt="delete-icon" style={{ color: '#bdbdbd' }} />
+                </IconButton>
+              </Box>
+            </Box>
+          )}
+          <TextField
+            variant="standard"
+            placeholder={!attachedFile ? 'Сообщение...' : ''}
+            value={message}
+            onChange={handleMessageChange}
+            multiline
+            minRows={1}
+            maxRows={5}
+            InputProps={{
+              disableUnderline: true,
+              sx: {
+                fontSize: 16,
+                flex: 1,
+                background: 'transparent',
+                p: 0,
+                m: 0,
+                '& textarea': {
+                  textAlign: 'left',
+                  p: '4px 8px',
+                  m: 0,
+                  overflow: 'auto',
+                  wordBreak: 'break-word',
+                },
+                color: '#22242B',
+              },
+            }}
+            sx={{ flex: 1, p: 0, m: 0, minWidth: 0 }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey && (message || attachedFile)) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            disabled={!!attachedFile || loading}
+          />
+          <IconButton
+            sx={{
+              background: isActive ? '#2979ff' : '#bdbdbd',
+              color: '#fff',
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              pointerEvents: isActive ? 'auto' : 'none', // блокирует клик
+              opacity: isActive ? 1 : 0.6,               // визуально "неактивно"
+              '&:hover': {
+                background: isActive ? '#1e4dcc' : '#bdbdbd',
+              },
+            }}
+            aria-label="Отправить"
+            onClick={isActive ? handleSend : undefined}
+          >
+            <NorthIcon sx={{ color: '#fff' }} />
+          </IconButton>
+
+          {showDragZone && (
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 10,
+                background: '#EDF5FF',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px dashed #0062FF',
+                pointerEvents: 'all',
+                gap: 1,
+              }}
+              onClick={() => setShowDragZone(false)} // Закрытие при клике вне
+            >
+              <img src="/assets/upload_file.svg" alt="upload-file" style={{ width: 48, height: 48 }} />
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', maxWidth: 200 }}>
+                <Typography sx={{ color: '#000000E0', fontWeight: 400, fontSize: 16, lineHeight: '24px' }}>
+                  Поместите файл сюда
+                </Typography>
+                <Typography sx={{ color: '#00000073', fontSize: 14, fontWeight: 400, lineHeight: '22px', textAlign: 'center' }}>
+                  Можно отправить 1 файл за раз Объем не более 5 Mb
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                sx={{ background: '#2979ff', '&:hover': { background: '#1e4dcc' } }}
+                onClick={() => {
+                  fileInputRef.current?.click();
+                  setShowDragZone(false);
+                }}
+              >
+                Выбрать файл
+              </Button>
+            </Box>
+          )}
+        </Box>
     </Paper>
   );
 };
