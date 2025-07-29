@@ -91,7 +91,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
         return newMessages;
       });
       const lastMessage = messages[messages.length - 1]?.text;
-      if (lastMessage !== 'Что бы вы хотели узнать?') {
+      if (lastMessage !== 'Чем могу помочь?') {
         setShowScenarios(true);
         localStorage.setItem('chatShowScenarios', JSON.stringify(true));
       }
@@ -239,7 +239,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
           ...prev,
           {
             id: Date.now() + 1,
-            text: 'Что бы вы хотели узнать?',
+            text: 'Чем могу помочь?',
             author: 'bot',
             time: now,
           },
@@ -276,9 +276,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
     <Paper
       elevation={8}
       sx={{
-        width: 360,
-        height: 500,
-        borderRadius: 2,
+        width: { xs: 350, sm: 360, md: 360 }, // Уменьшим ширину для xs до 260px
+        height: { xs: 480, sm: 500, md: 500 },
+        borderRadius: 4,
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -302,7 +302,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            border: '2px dashed #2979ff',
+            border: '1px dashed #2979ff',
             pointerEvents: 'all',
           }}
         >
@@ -344,6 +344,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
           overflowY: 'auto',
           background: '#fff',
           minHeight: 0,
+          scrollBehavior: 'smooth',
           '&::-webkit-scrollbar': {
             width: '8px',
           },
@@ -406,7 +407,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
                       component="span"
                       sx={{
                         color: '#2979ff',
-                        fontSize: 15,
+                        fontSize: 14,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -416,9 +417,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
                     >
                       {msg.fileName}
                     </Typography>
-                    <IconButton size="small" onClick={() => {}}>
+                    {/* <IconButton size="small" onClick={() => {}}>
                       <DeleteOutlineIcon sx={{ color: '#bdbdbd', fontSize: 18 }} />
-                    </IconButton>
+                    </IconButton> */}
                   </Box>
                   <Box sx={{ flex: 1 }} />
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 1 }}>
@@ -555,84 +556,103 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ onClose }) => {
           >
             <img src="/assets/load_icon.svg" alt="load-icon" style={{ color: '#2979ff' }} />
           </IconButton>
-          {attachedFile && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1, py: 0.5, mr: 1, minWidth: 0 }}>
-              <InsertDriveFileOutlinedIcon sx={{ color: '#2979ff', fontSize: 20 }} />
-              <Box sx={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 1, overflow: 'hidden' }}>
-                <Typography
-                  component="span"
-                  sx={{
-                    color: '#2979ff',
-                    fontSize: 15,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    flexGrow: 1,
-                    mr: 1,
-                  }}
-                  title={attachedFile.name}
-                >
-                  {attachedFile.name}
-                </Typography>
-                <IconButton size="small" onClick={handleRemoveFile}>
-                  <img src="/assets/delete_icon.svg" alt="delete-icon" style={{ color: '#bdbdbd' }} />
-                </IconButton>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
+            {/* Отображение прикреплённого файла */}
+            {attachedFile && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1, py: 0.5 }}>
+                <InsertDriveFileOutlinedIcon sx={{ color: '#2979ff', fontSize: 20 }} />
+                <Box sx={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography
+                    component="span"
+                    sx={{
+                      color: '#2979ff',
+                      fontSize: 14,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      flexGrow: 1,
+                    }}
+                    title={attachedFile.name}
+                  >
+                    {attachedFile.name}
+                  </Typography>
+                  <IconButton size="small" onClick={handleRemoveFile}>
+                    <img src="/assets/delete_icon.svg" alt="delete-icon" style={{ color: '#bdbdbd' }} />
+                  </IconButton>
+                </Box>
               </Box>
+            )}
+
+            {/* Поле ввода сообщения */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+              <TextField
+                variant="standard"
+                placeholder="Сообщение..."
+                value={message}
+                onChange={handleMessageChange}
+                multiline
+                minRows={1}
+                maxRows={5}
+                InputProps={{
+                  disableUnderline: true,
+                  sx: {
+                    fontSize: 16,
+                    flex: 1,
+                    background: 'transparent',
+                    p: 0,
+                    m: 0,
+                    '& textarea': {
+                      textAlign: 'left',
+                      p: '4px 8px',
+                      m: 0,
+                      overflow: 'auto',
+                      wordBreak: 'break-word',
+                      '&::-webkit-scrollbar': {
+                        width: '8px',
+                      },
+                      '&::-webkit-scrollbar-track': {
+                        background: '#f1f1f1',
+                      },
+                      '&::-webkit-scrollbar-thumb': {
+                        background: '#bdbdbd',
+                        borderRadius: '4px',
+                      },
+                      '&::-webkit-scrollbar-thumb:hover': {
+                        background: '#a0a0a0',
+                      },
+                    },
+                    color: '#22242B',
+                  },
+                }}
+                sx={{ flex: 1, p: 0, m: 0, minWidth: 0 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && (message || attachedFile)) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                disabled={loading} // Отключаем только при loading
+              />
+              <IconButton
+                sx={{
+                  background: isActive ? '#2979ff' : '#bdbdbd',
+                  color: '#fff',
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  pointerEvents: isActive ? 'auto' : 'none',
+                  opacity: isActive ? 1 : 0.6,
+                  '&:hover': {
+                    background: isActive ? '#1e4dcc' : '#bdbdbd',
+                  },
+                }}
+                aria-label="Отправить"
+                onClick={isActive ? handleSend : undefined}
+              >
+                <NorthIcon sx={{ color: '#fff' }} />
+              </IconButton>
             </Box>
-          )}
-          <TextField
-            variant="standard"
-            placeholder={!attachedFile ? 'Сообщение...' : ''}
-            value={message}
-            onChange={handleMessageChange}
-            multiline
-            minRows={1}
-            maxRows={5}
-            InputProps={{
-              disableUnderline: true,
-              sx: {
-                fontSize: 16,
-                flex: 1,
-                background: 'transparent',
-                p: 0,
-                m: 0,
-                '& textarea': {
-                  textAlign: 'left',
-                  p: '4px 8px',
-                  m: 0,
-                  overflow: 'auto',
-                  wordBreak: 'break-word',
-                },
-                color: '#22242B',
-              },
-            }}
-            sx={{ flex: 1, p: 0, m: 0, minWidth: 0 }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey && (message || attachedFile)) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            disabled={!!attachedFile || loading}
-          />
-          <IconButton
-            sx={{
-              background: isActive ? '#2979ff' : '#bdbdbd',
-              color: '#fff',
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              pointerEvents: isActive ? 'auto' : 'none', // блокирует клик
-              opacity: isActive ? 1 : 0.6,               // визуально "неактивно"
-              '&:hover': {
-                background: isActive ? '#1e4dcc' : '#bdbdbd',
-              },
-            }}
-            aria-label="Отправить"
-            onClick={isActive ? handleSend : undefined}
-          >
-            <NorthIcon sx={{ color: '#fff' }} />
-          </IconButton>
+          </Box>
 
           {showDragZone && (
             <Box
